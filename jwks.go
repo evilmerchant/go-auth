@@ -46,16 +46,20 @@ var jwksURL = "https://evilmerchant.b2clogin.com/2a80bde3-5842-4619-bc0c-bf0c754
 
 var EvilmerchantClaims = "EVMClaims"
 
-func EvilmerchantAuth() gin.HandlerFunc {
+func EvilmerchantAuth(authHeader *string) gin.HandlerFunc {
 	jwks := getKeyFunc(context.Background(), jwksURL)
 
 	return func(ctx *gin.Context) {
-		authHeader := ctx.GetHeader("Authorization")
-		if authHeader == "" {
+		_usedHeader := "X-Evilmerchant-Authorization"
+		if authHeader != nil {
+			_usedHeader = *authHeader
+		}
+		header := ctx.GetHeader(_usedHeader)
+		if header == "" {
 			ctx.AbortWithError(401, fmt.Errorf("no authorization token found"))
 			return
 		}
-		jwtB64 := authHeader[7:]
+		jwtB64 := header[7:]
 
 		token, err := jwt.Parse(jwtB64, jwks.Keyfunc)
 		if err != nil {
